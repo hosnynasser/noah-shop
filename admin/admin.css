@@ -41,8 +41,9 @@ main{max-width:900px;margin:0 auto;padding:16px 16px 90px}
 .banner .btn{justify-self:start}
 .bar{display:flex;gap:10px;margin-bottom:6px}
 .bar input{flex:1;min-width:0;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);padding:0 14px}
-.list{list-style:none;display:grid;gap:10px;margin-top:10px}
-.item{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;width:100%;text-align:start}
+.list{list-style:none;display:grid;grid-template-columns:minmax(0,1fr);gap:10px;margin-top:10px}
+.list>li{min-width:0}
+.item{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;width:100%;min-width:0;max-width:100%;text-align:start}
 .item .th{width:64px;height:64px;border-radius:10px;background:var(--card2);display:grid;place-items:center;overflow:hidden;flex:none;color:var(--muted);font-size:.72rem}
 .item .th img{width:100%;height:100%;object-fit:cover}
 .item .tx{flex:1;min-width:0}
@@ -60,7 +61,8 @@ label small{color:var(--muted);font-weight:400;font-size:.82rem}
 input:not([type=checkbox]):not([type=file]),select,textarea{width:100%;min-height:46px;border-radius:12px;border:1px solid var(--line);background:var(--card);padding:10px 12px;outline:0}
 textarea{resize:vertical}
 input:focus,select:focus,textarea:focus{border-color:var(--bulb)}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:end}
+.row2>label{min-width:0}
 .check{display:flex;align-items:center;gap:10px;min-height:44px}
 .check input{width:22px;height:22px;accent-color:var(--bulb)}
 
