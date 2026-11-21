@@ -111,6 +111,19 @@ function sameCode(a, b) {
 
 export default {
     async fetch(request, env) {
+        try {
+            return await handle(request, env);
+        } catch (e) {
+            const m = String((e && e.message) || e);
+            if (/free usage limit|limit for this operation|10048|429/i.test(m)) return json({ error: 'حد الحفظ اليومي المجاني خلص. الحفظ هيشتغل تاني بعد 2 الفجر بتوقيت القاهرة.' }, 503);
+            return json({ error: 'مشكلة مؤقتة في السيرفر. جرب تاني بعد شوية.' }, 500);
+        }
+    },
+};
+
+const handle = (request, env) => handler.fetch(request, env);
+const handler = {
+    async fetch(request, env) {
         if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
         const url = new URL(request.url);
         const path = url.pathname.replace(/\/+$/, '');
