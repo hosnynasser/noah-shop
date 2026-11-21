@@ -1,0 +1,7 @@
+name = "noah-api"
+main = "worker.js"
+compatibility_date = "2026-11-20"
+
+[[kv_namespaces]]
+binding = "SHOP_KV"
+id = "df0de3dc7a6349c59c6106190c7e6e0e"   # بيتعبّى بعد: wrangler kv namespace create SHOP_KV
