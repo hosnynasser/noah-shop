@@ -2,5 +2,12 @@
   X-Robots-Tag: noindex, nofollow
   Cache-Control: no-store
 
-/assets/*
-  Cache-Control: public, max-age=3600
+/assets/*.js
+  Cache-Control: no-cache
+/assets/*.css
+  Cache-Control: no-cache
+
+/assets/*.png
+  Cache-Control: public, max-age=86400
+/assets/*.webp
+  Cache-Control: public, max-age=86400
