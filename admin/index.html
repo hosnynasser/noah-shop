@@ -16,9 +16,10 @@
 <section id="login" class="login" hidden>
   <img src="../assets/logo.webp" alt="" class="login-logo">
   <h1>لوحة تحكم نوح</h1>
-  <p class="muted">اكتب كود الدخول</p>
-  <form id="loginForm" autocomplete="off">
-    <input id="code" type="password" inputmode="text" autocomplete="current-password" placeholder="كود الدخول" aria-label="كود الدخول" dir="ltr">
+  <p class="muted">ادخل باليوزر والباسورد</p>
+  <form id="loginForm">
+    <input id="user" type="text" autocomplete="username" autocapitalize="none" placeholder="اسم المستخدم" aria-label="اسم المستخدم" dir="ltr">
+    <input id="code" type="password" autocomplete="current-password" placeholder="الباسورد" aria-label="الباسورد" dir="ltr">
     <button class="btn primary" type="submit">دخول</button>
     <p id="loginErr" class="err" hidden></p>
   </form>
@@ -36,6 +37,7 @@
     <nav class="tabs" role="tablist">
       <button role="tab" id="tabP" class="on" data-tab="products" aria-selected="true">المنتجات</button>
       <button role="tab" id="tabS" data-tab="site" aria-selected="false">بيانات المحل <i id="siteDot" class="dot" hidden></i></button>
+    <button role="tab" id="tabA" data-tab="admins" aria-selected="false">المديرين</button>
     </nav>
   </header>
 
@@ -73,6 +75,18 @@
         <label>مواعيد الشغل
           <input id="sHours" placeholder="كل يوم من 9 صباحًا لـ 10 مساءً"></label>
         <button class="btn primary" type="submit">حفظ بيانات المحل</button>
+      </form>
+    </section>
+
+    <!-- المديرين -->
+    <section id="paneAdmins" hidden>
+      <p class="muted small">كل مدير ليه يوزر وباسورد خاص بيه. تقدر تضيف أو تمسح أو تغيّر اليوزر والباسورد. لازم يفضل مدير واحد على الأقل.</p>
+      <ul id="adminList" class="list"></ul>
+      <form id="adminForm" class="form addadmin" autocomplete="off">
+        <b>إضافة مدير</b>
+        <input id="nUser" dir="ltr" autocapitalize="none" placeholder="اسم المستخدم (إنجليزي، 3 حروف على الأقل)" maxlength="30" required>
+        <input id="nPass" type="password" dir="ltr" placeholder="الباسورد (6 حروف على الأقل)" autocomplete="new-password" minlength="6" maxlength="100" required>
+        <button class="btn primary" type="submit">إضافة</button>
       </form>
     </section>
   </main>

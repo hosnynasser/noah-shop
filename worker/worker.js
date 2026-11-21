@@ -5,18 +5,22 @@
 //   GET  /api/products        -> {products:[...]|null}   (null = لسه محدش حفظ منتجات)
 //   GET  /api/site            -> {site:{phone,whatsapp,address,hours,mapUrl}|null}
 //   GET  /api/media/<id>      -> صورة المنتج
-// لوحة التحكم (لازم هيدر X-Admin-Code = الكود):
+// الدخول: حسابات مديرين (يوزر + باسورد متخزن مشفّر PBKDF2 في KV، مفيش باسورد نصّي)
+//   POST /api/login {username,password} -> {token,username}   (التوكن صالح 30 يوم)
+// لوحة التحكم (لازم هيدر Authorization: Bearer <token>):
 //   POST /api/admin/check
-//   GET  /api/admin/products
-//   PUT  /api/admin/products  {products:[...]}
-//   PUT  /api/admin/site      {site:{...}}
-//   POST /api/admin/media     {data:<base64>,type:<mime>} -> {id}
-//   POST /api/admin/media/delete {ids:[...]}
+//   GET/PUT /api/admin/products ، PUT /api/admin/site ، POST /api/admin/media ، POST /api/admin/media/delete
+//   GET    /api/admin/admins            قايمة المديرين
+//   POST   /api/admin/admins {username,password}
+//   PUT    /api/admin/admins/<id> {username?,password?}
+//   DELETE /api/admin/admins/<id>       (مينفعش تمسح آخر مدير)
+// أول تشغيل: لو مفيش مديرين والسر ADMIN_CODE موجود، الدخول بيوزر admin وباسورد = ADMIN_CODE بيعمل أول حساب.
+// بعدها امسح السر: npx wrangler secret delete ADMIN_CODE
 
 const CORS = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET,POST,PUT,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type,X-Admin-Code',
+    'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type,Authorization',
 };
 const json = (data, status = 200) =>
     new Response(JSON.stringify(data), {
@@ -59,6 +63,45 @@ function cleanProduct(p, seen) {
     return out;
 }
 
+// ---------- حسابات المديرين ----------
+const enc = new TextEncoder();
+const hex = (buf) => [...new Uint8Array(buf)].map((x) => x.toString(16).padStart(2, '0')).join('');
+const unhex = (h) => Uint8Array.from(h.match(/../g) || [], (x) => parseInt(x, 16));
+const ITER = 100000; // أقصى رقم بيسمح بيه Workers
+async function hashPw(pw, saltHex) {
+    const key = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveBits']);
+    return hex(await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: unhex(saltHex), iterations: ITER }, key, 256));
+}
+async function makeUser(username, pw) {
+    const salt = hex(crypto.getRandomValues(new Uint8Array(16)));
+    return { id: rid('u-', 8), username, salt, hash: await hashPw(pw, salt), sv: 1 };
+}
+async function loadAdmins(env) {
+    const raw = await env.SHOP_KV.get('admins');
+    return raw ? JSON.parse(raw) : [];
+}
+const saveAdmins = (env, list) => env.SHOP_KV.put('admins', JSON.stringify(list));
+const publicUser = (u) => ({ id: u.id, username: u.username });
+const USERNAME = /^[A-Za-z0-9_.@-]{3,30}$/;
+async function sha256(t) { return hex(await crypto.subtle.digest('SHA-256', enc.encode(t))); }
+async function newSession(env, u) {
+    const token = hex(crypto.getRandomValues(new Uint8Array(32)));
+    await env.SHOP_KV.put('sess:' + (await sha256(token)), JSON.stringify({ uid: u.id, sv: u.sv }), { expirationTtl: 30 * 86400 });
+    return token;
+}
+async function authUser(request, env) {
+    const m = /^Bearer ([a-f0-9]{64})$/.exec(request.headers.get('Authorization') || '');
+    if (!m) return null;
+    const raw = await env.SHOP_KV.get('sess:' + (await sha256(m[1])));
+    if (!raw) return null;
+    const s = JSON.parse(raw);
+    const u = (await loadAdmins(env)).find((x) => x.id === s.uid);
+    return u && u.sv === s.sv ? u : null; // الحساب اتمسح أو الباسورد اتغيّر = الجلسة بتتلغي
+}
+function checkPw(pw) {
+    return typeof pw === 'string' && pw.length >= 6 && pw.length <= 100;
+}
+
 function sameCode(a, b) {
     a = String(a || ''); b = String(b || '');
     let d = a.length ^ b.length;
@@ -93,15 +136,85 @@ export default {
             });
         }
 
+        // ---------- تسجيل الدخول ----------
+        if (path === '/api/login' && request.method === 'POST') {
+            const b = await request.json().catch(() => ({}));
+            const username = clean(b.username, 30).toLowerCase();
+            const pw = String(b.password || '').slice(0, 100);
+            let list = await loadAdmins(env);
+            let user = null;
+            if (!list.length && env.ADMIN_CODE && username === 'admin' && sameCode(pw, env.ADMIN_CODE)) {
+                user = await makeUser('admin', pw); // أول حساب
+                await saveAdmins(env, [user]);
+            } else {
+                const u = list.find((x) => x.username.toLowerCase() === username);
+                if (u && sameCode(await hashPw(pw, u.salt), u.hash)) user = u;
+                else await hashPw(pw, '00'.repeat(16)); // نفس الزمن لو اليوزر مش موجود
+            }
+            if (!user) {
+                await new Promise((r) => setTimeout(r, 700)); // تبطيء المحاولات الغلط
+                return json({ error: 'unauthorized' }, 401);
+            }
+            return json({ token: await newSession(env, user), username: user.username });
+        }
+
         // ---------- لوحة التحكم ----------
         if (path.startsWith('/api/admin/')) {
-            if (!env.ADMIN_CODE || !sameCode(request.headers.get('X-Admin-Code'), env.ADMIN_CODE)) {
-                await new Promise((r) => setTimeout(r, 500)); // تبطيء المحاولات الغلط
+            const me = await authUser(request, env);
+            if (!me) {
+                await new Promise((r) => setTimeout(r, 300));
                 return json({ error: 'unauthorized' }, 401);
             }
             const body = request.method === 'GET' ? {} : await request.json().catch(() => ({}));
 
-            if (path === '/api/admin/check') return json({ ok: true });
+            if (path === '/api/admin/check') return json({ ok: true, me: publicUser(me) });
+
+            // ----- المديرين -----
+            if (path === '/api/admin/admins' && request.method === 'GET') {
+                return json({ admins: (await loadAdmins(env)).map(publicUser), me: me.id });
+            }
+            if (path === '/api/admin/admins' && request.method === 'POST') {
+                const username = clean(body.username, 30);
+                if (!USERNAME.test(username)) return json({ error: 'اسم المستخدم 3 لـ 30 حرف إنجليزي أو أرقام (و _ . - @)' }, 400);
+                if (!checkPw(body.password)) return json({ error: 'الباسورد لازم 6 حروف على الأقل' }, 400);
+                const list = await loadAdmins(env);
+                if (list.length >= 20) return json({ error: 'وصلت للحد الأقصى (20 مدير)' }, 400);
+                if (list.some((x) => x.username.toLowerCase() === username.toLowerCase())) return json({ error: 'اسم المستخدم ده موجود' }, 409);
+                const u = await makeUser(username, body.password);
+                list.push(u);
+                await saveAdmins(env, list);
+                return json({ ok: true, admin: publicUser(u) });
+            }
+            const am = /^\/api\/admin\/admins\/(u-[a-z0-9]{4,20})$/.exec(path);
+            if (am && request.method === 'PUT') {
+                const list = await loadAdmins(env);
+                const u = list.find((x) => x.id === am[1]);
+                if (!u) return json({ error: 'المدير مش موجود' }, 404);
+                if (body.username !== undefined) {
+                    const username = clean(body.username, 30);
+                    if (!USERNAME.test(username)) return json({ error: 'اسم المستخدم 3 لـ 30 حرف إنجليزي أو أرقام (و _ . - @)' }, 400);
+                    if (list.some((x) => x.id !== u.id && x.username.toLowerCase() === username.toLowerCase())) return json({ error: 'اسم المستخدم ده موجود' }, 409);
+                    u.username = username;
+                }
+                if (body.password !== undefined && body.password !== '') {
+                    if (!checkPw(body.password)) return json({ error: 'الباسورد لازم 6 حروف على الأقل' }, 400);
+                    u.salt = hex(crypto.getRandomValues(new Uint8Array(16)));
+                    u.hash = await hashPw(body.password, u.salt);
+                    u.sv = (u.sv || 1) + 1; // بيطرد الجلسات القديمة للحساب ده
+                }
+                await saveAdmins(env, list);
+                // اللي غيّر باسوره بنفسه يفضل داخل بجلسة جديدة
+                const out = { ok: true, admin: publicUser(u) };
+                if (u.id === me.id && body.password) out.token = await newSession(env, u);
+                return json(out);
+            }
+            if (am && request.method === 'DELETE') {
+                const list = await loadAdmins(env);
+                if (!list.some((x) => x.id === am[1])) return json({ error: 'المدير مش موجود' }, 404);
+                if (list.length <= 1) return json({ error: 'مينفعش تمسح آخر مدير' }, 400);
+                await saveAdmins(env, list.filter((x) => x.id !== am[1]));
+                return json({ ok: true });
+            }
 
             if (path === '/api/admin/products' && request.method === 'GET') {
                 const raw = await env.SHOP_KV.get('products');

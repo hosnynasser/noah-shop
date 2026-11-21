@@ -85,3 +85,10 @@ input:focus,select:focus,textarea:focus{border-color:var(--bulb)}
 
 .toast{position:fixed;inset-inline:16px;bottom:calc(20px + env(safe-area-inset-bottom));z-index:80;max-width:420px;margin:0 auto;background:#1f3d2b;border:1px solid var(--ok);color:#d7ffe6;padding:12px 16px;border-radius:14px;text-align:center}
 .toast.bad{background:#472421;border-color:var(--bad);color:#ffd9d4}
+
+.login input+input{margin-top:0}
+.arow{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;display:grid;gap:10px}
+.ahead{display:flex;gap:8px;align-items:center}
+.aedit{display:grid;gap:8px}
+.abtns{display:flex;gap:8px;flex-wrap:wrap}
+.addadmin{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}

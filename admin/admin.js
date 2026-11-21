@@ -3,8 +3,9 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const mediaUrl=id=>/^https?:/.test(id)?id:API_BASE+'/api/media/'+id;
 const fmt=n=>Number(n).toLocaleString('en-US');
-const KEY='noah_admin_code';
-let CODE=localStorage.getItem(KEY)||'';
+const KEY='noah_admin_token';
+let TOKEN=localStorage.getItem(KEY)||'';
+let ME=null;
 let products=[];
 let editing=null;      // المنتج اللي بيتعدل (null = جديد)
 let draftImages=[];    // معرّفات الصور في النافذة
@@ -14,8 +15,8 @@ let busy=false;
 
 /* ---------- الاتصال بالـAPI ---------- */
 async function api(method,path,body){
-  const r=await fetch(API_BASE+path,{method,headers:{'Content-Type':'application/json','X-Admin-Code':CODE},body:body?JSON.stringify(body):undefined});
-  if(r.status===401){logout('الكود غلط أو اتغيّر. اكتبه تاني.');throw new Error('unauthorized')}
+  const r=await fetch(API_BASE+path,{method,headers:{'Content-Type':'application/json','Authorization':'Bearer '+TOKEN},body:body?JSON.stringify(body):undefined});
+  if(r.status===401){logout('الجلسة خلصت. ادخل تاني.');throw new Error('unauthorized')}
   const d=await r.json().catch(()=>({}));
   if(!r.ok)throw new Error(d.error||('خطأ '+r.status));
   return d;
@@ -25,34 +26,37 @@ function toast(msg,bad){const t=$('#toast');t.textContent=msg;t.className='toast
 
 /* ---------- الدخول ---------- */
 function logout(msg){
-  localStorage.removeItem(KEY);CODE='';
+  localStorage.removeItem(KEY);TOKEN='';ME=null;
   $('#app').hidden=true;$('#login').hidden=false;
   const e=$('#loginErr');if(msg){e.textContent=msg;e.hidden=false}else e.hidden=true;
   $('#code').value='';
 }
 $('#loginForm').addEventListener('submit',async e=>{
   e.preventDefault();
-  CODE=$('#code').value.trim();if(!CODE)return;
+  const username=$('#user').value.trim(),password=$('#code').value;if(!username||!password)return;
   const b=e.target.querySelector('button');b.disabled=true;
+  const x=$('#loginErr');
   try{
-    await api('POST','/api/admin/check',{});
-    localStorage.setItem(KEY,CODE);$('#loginErr').hidden=true;await start();
-  }catch(err){
-    if(err.message!=='unauthorized'){const x=$('#loginErr');x.textContent='مش قادر يتصل بالسيرفر. جرّب تاني.';x.hidden=false}
-  }finally{b.disabled=false}
+    const r=await fetch(API_BASE+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
+    if(r.status===401){x.textContent='اليوزر أو الباسورد غلط.';x.hidden=false;return}
+    if(!r.ok)throw new Error(r.status);
+    const d=await r.json();TOKEN=d.token;localStorage.setItem(KEY,TOKEN);
+    x.hidden=true;$('#code').value='';await start();
+  }catch(err){x.textContent='مش قادر يتصل بالسيرفر. جرّب تاني.';x.hidden=false}
+  finally{b.disabled=false}
 });
 $('#logout').onclick=()=>logout();
 
 async function start(){
   $('#login').hidden=true;$('#app').hidden=false;
   $('#fCat').innerHTML=CATS.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
-  await Promise.all([loadProducts(),loadSite()]);
+  await Promise.all([loadProducts(),loadSite(),loadAdmins()]);
 }
 
 /* ---------- التبويبات ---------- */
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('.tabs button').forEach(x=>{x.classList.toggle('on',x===b);x.setAttribute('aria-selected',x===b)});
-  $('#paneProducts').hidden=b.dataset.tab!=='products';$('#paneSite').hidden=b.dataset.tab!=='site';
+  $('#paneProducts').hidden=b.dataset.tab!=='products';$('#paneSite').hidden=b.dataset.tab!=='site';$('#paneAdmins').hidden=b.dataset.tab!=='admins';
 });
 
 /* ---------- المنتجات ---------- */
@@ -238,8 +242,59 @@ $('#siteForm').addEventListener('submit',async e=>{
   finally{b.disabled=false}
 });
 
+/* ---------- المديرين ---------- */
+let admins=[];
+async function loadAdmins(){
+  try{
+    const d=await api('GET','/api/admin/admins');admins=d.admins;ME=d.me;renderAdmins();
+  }catch(e){if(e.message!=='unauthorized')toast('مش قادر أحمّل المديرين: '+e.message,true)}
+}
+function renderAdmins(){
+  $('#adminList').innerHTML=admins.map(a=>`<li class="arow" data-id="${esc(a.id)}">
+    <div class="ahead"><b dir="ltr">${esc(a.username)}</b>${a.id===ME?'<span class="tag sm">أنت</span>':''}</div>
+    <div class="aedit">
+      <input class="aUser" dir="ltr" value="${esc(a.username)}" aria-label="اسم المستخدم" maxlength="30" autocapitalize="none">
+      <input class="aPass" type="password" dir="ltr" placeholder="باسورد جديد (سيبه فاضي لو مش هتغيره)" aria-label="باسورد جديد" autocomplete="new-password" maxlength="100">
+      <div class="abtns"><button type="button" class="btn primary sm" data-act="save">حفظ</button>
+      <button type="button" class="btn danger sm" data-act="del"${admins.length<2?' disabled title="مينفعش تمسح آخر مدير"':''}>مسح</button></div>
+    </div></li>`).join('');
+}
+$('#adminList').addEventListener('click',async e=>{
+  const btn=e.target.closest('[data-act]');if(!btn)return;
+  const row=btn.closest('.arow'),id=row.dataset.id;
+  if(btn.dataset.act==='save'){
+    const body={username:row.querySelector('.aUser').value.trim()};
+    const pw=row.querySelector('.aPass').value;if(pw)body.password=pw;
+    btn.disabled=true;
+    try{
+      const d=await api('PUT','/api/admin/admins/'+id,body);
+      if(d.token){TOKEN=d.token;localStorage.setItem(KEY,TOKEN)}
+      toast(pw?'اتحفظ. الباسورد الجديد شغال':'اتحفظ');await loadAdmins();
+    }catch(ex){if(ex.message!=='unauthorized')toast(ex.message,true)}
+    finally{btn.disabled=false}
+  }else if(btn.dataset.act==='del'){
+    const self=id===ME;
+    confirmClick(btn,self?'ده حسابك. اضغط تاني للتأكيد':'اضغط تاني للتأكيد',async()=>{
+      try{
+        await api('DELETE','/api/admin/admins/'+id);
+        if(self){logout('اتمسح حسابك.');return}
+        toast('اتمسح المدير');await loadAdmins();
+      }catch(ex){if(ex.message!=='unauthorized')toast(ex.message,true)}
+    });
+  }
+});
+$('#adminForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const b=e.target.querySelector('button[type=submit]');b.disabled=true;
+  try{
+    await api('POST','/api/admin/admins',{username:$('#nUser').value.trim(),password:$('#nPass').value});
+    $('#nUser').value='';$('#nPass').value='';toast('اتضاف المدير');await loadAdmins();
+  }catch(ex){if(ex.message!=='unauthorized')toast(ex.message,true)}
+  finally{b.disabled=false}
+});
+
 /* ---------- تشغيل ---------- */
 (async()=>{
-  if(CODE){try{await api('POST','/api/admin/check',{});await start();return}catch(_){}}
+  if(TOKEN){try{await api('POST','/api/admin/check',{});await start();return}catch(_){}}
   $('#login').hidden=false;
 })();

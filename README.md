@@ -5,7 +5,7 @@
 
 ## الروابط
 - الموقع: https://noah-shop.pages.dev/
-- لوحة التحكم: https://noah-shop.pages.dev/admin/ (محتاجة كود الدخول، اتبعتلك في رابط الـ vault)
+- لوحة التحكم: https://noah-shop.pages.dev/admin/ (دخول بيوزر وباسورد)
 - الـ API: https://noah-api.hosnynasser843.workers.dev
 
 ## هيكل المشروع
@@ -41,9 +41,12 @@ manifest.webmanifest, robots.txt, sitemap.xml, _headers
 
 ## الـ Worker
 - المنتجات في KV اسمه `noah-shop-kv`، والصور بتتخزن فيه برضه.
-- كود الدخول سر اسمه `ADMIN_CODE` على الـ Worker.
+- المديرين (يوزر + باسورد متشفّر PBKDF2) متخزنين في KV تحت المفتاح `admins`. الجلسات 30 يوم.
 - نشر تعديل في worker.js: `cd worker && npx wrangler deploy`.
-- تغيير الكود: `npx wrangler secret put ADMIN_CODE`.
+
+## المديرين
+من تبويب "المديرين" في اللوحة: إضافة مدير، مسح، تغيير اليوزر أو الباسورد. مينفعش تمسح آخر مدير.
+لو نسيت كل الباسوردات: امسح المفتاح `admins` من KV (`npx wrangler kv key delete admins --binding SHOP_KV --remote`)، وحط سر مؤقت `npx wrangler secret put ADMIN_CODE`، وادخل بيوزر `admin` والباسورد اللي كتبته. بعدها غيّر الباسورد وامسح السر (`npx wrangler secret delete ADMIN_CODE`).
 
 ## ملاحظات
 - لو غيّرت رابط الموقع، غيّره كمان في وسوم og/canonical في index.html وفي sitemap.xml و robots.txt.
