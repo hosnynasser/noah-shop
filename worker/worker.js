@@ -149,6 +149,45 @@ const handler = {
             });
         }
 
+        // ---------- طلبات الزباين (عام) ----------
+        if (path === '/api/orders' && request.method === 'POST') {
+            if (!env.ORDERS_DB) return json({ error: 'الطلبات مش متاحة دلوقتي. كلمنا واتساب.' }, 503);
+            const b = await request.json().catch(() => null);
+            if (!b || typeof b !== 'object') return json({ error: 'بيانات الطلب مش صحيحة' }, 400);
+            if (b.website) return json({ ok: true, id: 'NH-0000' }); // خانة مخفية للروبوتات
+            const name = clean(b.name, 80), phone = clean(b.phone, 30).replace(/[^\d+]/g, ''), address = clean(b.address, 300), notes = clean(b.notes, 300);
+            if (name.length < 2) return json({ error: 'اكتب اسمك' }, 400);
+            if (phone.replace(/\D/g, '').length < 8) return json({ error: 'اكتب رقم تليفون صحيح' }, 400);
+            if (address.length < 5) return json({ error: 'اكتب العنوان' }, 400);
+            const rawItems = Array.isArray(b.items) ? b.items.slice(0, 40) : [];
+            if (!rawItems.length) return json({ error: 'السلة فاضية' }, 400);
+            const praw = await env.SHOP_KV.get('products');
+            const catalog = praw ? JSON.parse(praw) : [];
+            const byId = new Map(catalog.map((p) => [p.id, p]));
+            const merged = new Map();
+            for (const it of rawItems) {
+                const id = clean(it && it.id, 40);
+                const qty = Math.max(1, Math.min(99, parseInt(it && it.qty, 10) || 1));
+                merged.set(id, Math.min(99, (merged.get(id) || 0) + qty));
+            }
+            const lines = [];
+            for (const [id, qty] of merged) {
+                const p = byId.get(id);
+                if (!p) return json({ error: 'منتج في السلة مبقاش موجود. حدّث الصفحة.', code: 'unknown_product', id }, 400);
+                if (p.sample) return json({ error: 'المنتج ده تجريبي ومش متاح للطلب: ' + p.name, code: 'sample' }, 400);
+                if (p.stock === false) return json({ error: 'منتج في السلة نفد: ' + p.name, code: 'out_of_stock', id }, 400);
+                lines.push({ id, name: p.name, price: p.price, qty, lineTotal: Math.round(p.price * qty * 100) / 100 });
+            }
+            const total = Math.round(lines.reduce((a, l) => a + l.lineTotal, 0) * 100) / 100;
+            const since = Date.now() - 3600_000;
+            const recent = await env.ORDERS_DB.prepare('SELECT COUNT(*) AS n FROM orders WHERE phone = ? AND ts > ?').bind(phone, since).first();
+            if ((recent && recent.n) >= 5) return json({ error: 'طلبات كتير في وقت قصير. كلمنا واتساب.' }, 429);
+            const id = 'NH-' + Date.now().toString(36).toUpperCase().slice(-5) + rid('', 3).toUpperCase();
+            await env.ORDERS_DB.prepare('INSERT INTO orders (id, ts, name, phone, address, notes, items, total, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+                .bind(id, Date.now(), name, phone, address, notes, JSON.stringify(lines), total, 'new').run();
+            return json({ ok: true, id, total });
+        }
+
         // ---------- تسجيل الدخول ----------
         if (path === '/api/login' && request.method === 'POST') {
             const b = await request.json().catch(() => ({}));
@@ -226,6 +265,21 @@ const handler = {
                 if (!list.some((x) => x.id === am[1])) return json({ error: 'المدير مش موجود' }, 404);
                 if (list.length <= 1) return json({ error: 'مينفعش تمسح آخر مدير' }, 400);
                 await saveAdmins(env, list.filter((x) => x.id !== am[1]));
+                return json({ ok: true });
+            }
+
+            // ----- الطلبات -----
+            if (path === '/api/admin/orders' && request.method === 'GET') {
+                if (!env.ORDERS_DB) return json({ orders: [], disabled: true });
+                const { results } = await env.ORDERS_DB.prepare('SELECT id, ts, name, phone, address, notes, items, total, status FROM orders ORDER BY ts DESC LIMIT 300').all();
+                return json({ orders: (results || []).map((o) => ({ ...o, items: (() => { try { return JSON.parse(o.items); } catch { return []; } })() })) });
+            }
+            if (path === '/api/admin/orders/status' && request.method === 'POST') {
+                if (!env.ORDERS_DB) return json({ error: 'الطلبات مش متاحة' }, 503);
+                const id = clean(body.id, 30), status = clean(body.status, 20);
+                if (!['new', 'preparing', 'done', 'cancelled'].includes(status)) return json({ error: 'حالة غير صحيحة' }, 400);
+                const r = await env.ORDERS_DB.prepare('UPDATE orders SET status = ? WHERE id = ?').bind(status, id).run();
+                if (!(r.meta && r.meta.changes)) return json({ error: 'الطلب مش موجود' }, 404);
                 return json({ ok: true });
             }
 

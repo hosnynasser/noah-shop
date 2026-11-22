@@ -50,13 +50,13 @@ $('#logout').onclick=()=>logout();
 async function start(){
   $('#login').hidden=true;$('#app').hidden=false;
   $('#fCat').innerHTML=CATS.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
-  await Promise.all([loadProducts(),loadSite(),loadAdmins()]);
+  await Promise.all([loadProducts(),loadSite(),loadAdmins(),loadOrders(true)]);
 }
 
 /* ---------- التبويبات ---------- */
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('.tabs button').forEach(x=>{x.classList.toggle('on',x===b);x.setAttribute('aria-selected',x===b)});
-  $('#paneProducts').hidden=b.dataset.tab!=='products';$('#paneSite').hidden=b.dataset.tab!=='site';$('#paneAdmins').hidden=b.dataset.tab!=='admins';
+  $('#paneProducts').hidden=b.dataset.tab!=='products';$('#paneSite').hidden=b.dataset.tab!=='site';$('#paneAdmins').hidden=b.dataset.tab!=='admins';$('#paneOrders').hidden=b.dataset.tab!=='orders';if(b.dataset.tab==='orders')loadOrders();
 });
 
 /* ---------- المنتجات ---------- */
@@ -291,6 +291,40 @@ $('#adminForm').addEventListener('submit',async e=>{
     $('#nUser').value='';$('#nPass').value='';toast('اتضاف المدير');await loadAdmins();
   }catch(ex){if(ex.message!=='unauthorized')toast(ex.message,true)}
   finally{b.disabled=false}
+});
+
+/* ---------- الطلبات ---------- */
+const ST={new:'جديد',preparing:'بيتجهز',done:'اتسلم',cancelled:'ملغي'};
+let orders=[];
+async function loadOrders(quiet){
+  try{const d=await api('GET','/api/admin/orders');orders=d.orders||[];renderOrders();
+    const n=orders.filter(o=>o.status==='new').length;$('#ordDot').hidden=!n;
+  }catch(ex){if(!quiet&&ex.message!=='unauthorized')toast(ex.message,true)}
+}
+function renderOrders(){
+  const f=$('#ordFilter').value;const list=orders.filter(o=>f==='all'||o.status===f);
+  $('#ordCount').textContent=orders.length?`${list.length} طلب`:'';
+  if(!list.length){$('#ordList').innerHTML=`<li class="muted" style="padding:18px;text-align:center">${orders.length?'مفيش طلبات بالحالة دي':'لسه مفيش طلبات'}</li>`;return}
+  $('#ordList').innerHTML=list.map(o=>{
+    const d=new Date(o.ts).toLocaleString('ar-EG',{dateStyle:'medium',timeStyle:'short'});
+    return `<li class="ord" data-id="${esc(o.id)}"><div class="ord-h"><b dir="ltr">${esc(o.id)}</b><span class="st st-${esc(o.status)}">${ST[o.status]||esc(o.status)}</span></div>
+    <div class="muted small">${esc(d)}</div>
+    <div><b>${esc(o.name)}</b> · <a href="tel:${esc(o.phone)}" dir="ltr">${esc(o.phone)}</a></div>
+    <div class="small">${esc(o.address)}</div>${o.notes?`<div class="small muted">ملاحظات: ${esc(o.notes)}</div>`:''}
+    <ul class="ord-items">${o.items.map(i=>`<li><span>${esc(i.name)} × ${i.qty}</span><em>${fmt(i.lineTotal)}</em></li>`).join('')}</ul>
+    <div class="ord-t"><span>الإجمالي</span><strong>${fmt(o.total)} ج.م</strong></div>
+    <div class="ord-a">${Object.keys(ST).filter(k=>k!==o.status).map(k=>`<button type="button" class="btn ${k==='cancelled'?'danger':'ghost'} sm" data-st="${k}">${ST[k]}</button>`).join('')}
+    <a class="btn ghost sm" target="_blank" rel="noopener" href="https://wa.me/${esc(waNum(o.phone))}">واتساب</a></div></li>`;
+  }).join('');
+}
+function waNum(p){let d=String(p).replace(/\D/g,'');if(d.startsWith('00'))d=d.slice(2);else if(d.startsWith('0'))d='20'+d.slice(1);return d}
+$('#ordFilter').onchange=renderOrders;$('#ordRefresh').onclick=()=>loadOrders();
+$('#ordList').addEventListener('click',async e=>{
+  const b=e.target.closest('[data-st]');if(!b)return;const li=b.closest('.ord');
+  if(b.dataset.st==='cancelled'&&!confirm('تلغي الطلب ده؟'))return;
+  b.disabled=true;
+  try{await api('POST','/api/admin/orders/status',{id:li.dataset.id,status:b.dataset.st});toast('اتغيرت الحالة');await loadOrders()}
+  catch(ex){if(ex.message!=='unauthorized')toast(ex.message,true);b.disabled=false}
 });
 
 /* ---------- تشغيل ---------- */

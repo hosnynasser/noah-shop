@@ -1,0 +1,3 @@
+CREATE TABLE IF NOT EXISTS orders (id TEXT PRIMARY KEY, ts INTEGER NOT NULL, name TEXT NOT NULL, phone TEXT NOT NULL, address TEXT NOT NULL, notes TEXT, items TEXT NOT NULL, total REAL NOT NULL, status TEXT NOT NULL DEFAULT 'new');
+CREATE INDEX IF NOT EXISTS orders_phone_ts ON orders(phone, ts);
+CREATE INDEX IF NOT EXISTS orders_ts ON orders(ts);

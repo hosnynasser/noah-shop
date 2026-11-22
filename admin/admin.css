@@ -94,3 +94,15 @@ input:focus,select:focus,textarea:focus{border-color:var(--bulb)}
 .aedit{display:grid;gap:8px}
 .abtns{display:flex;gap:8px;flex-wrap:wrap}
 .addadmin{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+
+/* الطلبات */
+.bar select{flex:1;min-width:0;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:inherit;padding:0 12px;font:inherit}
+.ord{display:grid;gap:6px;padding:14px;border-radius:16px;border:1px solid var(--line);background:var(--card)}
+.ord-h{display:flex;justify-content:space-between;align-items:center}
+.st{padding:3px 12px;border-radius:99px;font-size:.85rem;border:1px solid var(--line)}
+.st-new{background:#ffb81c;color:#1a1200;border-color:transparent}
+.st-preparing{border-color:#6aa9ff;color:#6aa9ff}.st-done{border-color:#58d68d;color:#58d68d}.st-cancelled{border-color:#ff7a6b;color:#ff7a6b}
+.ord-items{list-style:none;display:grid;gap:4px;padding:8px 0;border-block:1px dashed var(--line)}
+.ord-items li{display:flex;justify-content:space-between;gap:10px}.ord-items em{font-style:normal}
+.ord-t{display:flex;justify-content:space-between;align-items:center}.ord-t strong{font-size:1.15rem}
+.ord-a{display:flex;flex-wrap:wrap;gap:8px}.ord-a .btn{min-height:44px}

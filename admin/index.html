@@ -37,6 +37,7 @@
     <nav class="tabs" role="tablist">
       <button role="tab" id="tabP" class="on" data-tab="products" aria-selected="true">المنتجات</button>
       <button role="tab" id="tabS" data-tab="site" aria-selected="false">بيانات المحل <i id="siteDot" class="dot" hidden></i></button>
+    <button role="tab" id="tabO" data-tab="orders" aria-selected="false">الطلبات <i id="ordDot" class="dot" hidden></i></button>
     <button role="tab" id="tabA" data-tab="admins" aria-selected="false">المديرين</button>
     </nav>
   </header>
@@ -76,6 +77,14 @@
           <input id="sHours" placeholder="كل يوم من 9 صباحًا لـ 10 مساءً"></label>
         <button class="btn primary" type="submit">حفظ بيانات المحل</button>
       </form>
+    </section>
+
+    <!-- الطلبات -->
+    <section id="paneOrders" hidden>
+      <div class="bar"><select id="ordFilter" aria-label="فلتر الحالة"><option value="all">كل الطلبات</option><option value="new">جديد</option><option value="preparing">بيتجهز</option><option value="done">اتسلم</option><option value="cancelled">ملغي</option></select>
+        <button class="btn ghost" id="ordRefresh" type="button">تحديث</button></div>
+      <p id="ordCount" class="muted small"></p>
+      <ul id="ordList" class="list"></ul>
     </section>
 
     <!-- المديرين -->
