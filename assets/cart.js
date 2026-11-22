@@ -61,7 +61,7 @@
         <small class="o-note">ده طلب مش تأكيد نهائي. المحل بيراجعه.</small>
       </form>`:`<div class="empty"><h3>السلة فاضية</h3><p>اختار منتجات من صفحة المنتجات.</p></div>`}
     </div></div>`;
-    box.hidden=false;document.body.style.overflow='hidden';bar.hidden=true;
+    box.hidden=false;document.body.style.overflow='hidden';bar.hidden=true;const ct=document.getElementById('cToast');if(ct)ct.classList.remove('on');
   }
   function closeCart(){box.hidden=true;box.innerHTML='';document.body.style.overflow='';refreshBar()}
   bar.onclick=openCart;
