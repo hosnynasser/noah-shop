@@ -47,7 +47,8 @@
     box.innerHTML=`<div class="sheet" role="dialog" aria-modal="true" aria-label="السلة"><div class="body">
       <div class="c-head"><h2>سلتك</h2><button type="button" class="ibtn" id="cartX" aria-label="إغلاق">${ic('x')}</button></div>
       ${ls.length?`<ul class="cl-list">${ls.map(lineHtml).join('')}</ul>
-      <div class="c-total"><span>الإجمالي</span><strong>${money(total())} ج.م</strong></div>
+      <div class="c-total"><span>إجمالي المنتجات</span><strong>${money(total())} ج.م</strong></div>
+      <p class="o-note">ده مجموع أسعار المنتجات بس. الشحن والتوصيل والدفع بيتحددوا مع المحل بعد مراجعة الطلب.</p>
       <form id="ordForm" class="o-form" autocomplete="on">
         <input name="name" placeholder="الاسم" required maxlength="80" autocomplete="name" value="${esc(prefill.name||'')}">
         <input name="phone" placeholder="رقم التليفون" required inputmode="tel" dir="ltr" maxlength="30" autocomplete="tel" value="${esc(prefill.phone||'')}">
@@ -55,8 +56,9 @@
         <input name="notes" placeholder="ملاحظات (اختياري)" maxlength="300">
         <input name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
         <p class="o-err" id="ordErr" hidden></p>
-        <button class="btn primary" id="ordGo" type="submit">ابعت الطلب</button>
-        <small class="o-note">الدفع عند الاستلام. هنكلمك نأكد الطلب.</small>
+        <label class="o-rem"><input type="checkbox" name="remember" ${prefill.name?'checked':''}> احفظ بياناتي على الجهاز ده للمرة الجاية</label>
+        <button class="btn primary" id="ordGo" type="submit">ابعت طلب للمراجعة</button>
+        <small class="o-note">ده طلب مش تأكيد نهائي. المحل بيراجعه.</small>
       </form>`:`<div class="empty"><h3>السلة فاضية</h3><p>اختار منتجات من صفحة المنتجات.</p></div>`}
     </div></div>`;
     box.hidden=false;document.body.style.overflow='hidden';bar.hidden=true;
@@ -81,11 +83,11 @@
         if(d.code==='unknown_product'||d.code==='out_of_stock'||d.code==='sample'){delete cart[d.id];save()}
         throw new Error(d.error||'حصلت مشكلة. جرّب تاني أو كلمنا واتساب.');
       }
-      try{localStorage.setItem('noah_cust',JSON.stringify({name:v.name,phone:v.phone,address:v.address}))}catch(_){}
+      try{if(v.remember)localStorage.setItem('noah_cust',JSON.stringify({name:v.name,phone:v.phone,address:v.address}));else localStorage.removeItem('noah_cust')}catch(_){}
       cart={};save();
-      box.innerHTML=`<div class="sheet" role="dialog" aria-modal="true"><div class="body ok-box"><h2>وصل طلبك ✓</h2><p>رقم الطلب: <b dir="ltr">${esc(d.id)}</b></p><p>الإجمالي ${money(d.total)} ج.م. الدفع عند الاستلام. هنكلمك على رقمك نأكد.</p><button class="btn primary" type="button" id="cartX">تمام</button></div></div>`;
+      box.innerHTML=`<div class="sheet" role="dialog" aria-modal="true"><div class="body ok-box"><h2>اتسجل طلبك</h2><p>رقم الطلب: <b dir="ltr">${esc(d.id)}</b></p><p>الطلب قيد المراجعة من المحل. مجموع أسعار المنتجات ${money(d.total)} ج.م، من غير شحن أو أي رسوم. مش تأكيد نهائي، وتفاصيل التوصيل والدفع بتتحدد مع المحل. احتفظ برقم الطلب.</p><button class="btn primary" type="button" id="cartX">تمام</button></div></div>`;
     }catch(ex){
-      err.textContent=(ex&&ex.name==='TypeError')?'مفيش اتصال. جرّب تاني.':ex.message;err.hidden=false;go.disabled=false;go.textContent='ابعت الطلب';
+      err.textContent=(ex&&ex.name==='TypeError')?'مفيش اتصال. جرّب تاني.':ex.message;err.hidden=false;go.disabled=false;go.textContent='ابعت طلب للمراجعة';
     }
   });
   addEventListener('keydown',e=>{if(e.key==='Escape'&&!box.hidden)closeCart()});

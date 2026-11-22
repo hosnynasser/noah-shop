@@ -312,7 +312,7 @@ function renderOrders(){
     <div><b>${esc(o.name)}</b> · <a href="tel:${esc(o.phone)}" dir="ltr">${esc(o.phone)}</a></div>
     <div class="small">${esc(o.address)}</div>${o.notes?`<div class="small muted">ملاحظات: ${esc(o.notes)}</div>`:''}
     <ul class="ord-items">${o.items.map(i=>`<li><span>${esc(i.name)} × ${i.qty}</span><em>${fmt(i.lineTotal)}</em></li>`).join('')}</ul>
-    <div class="ord-t"><span>الإجمالي</span><strong>${fmt(o.total)} ج.م</strong></div>
+    <div class="ord-t"><span>مجموع المنتجات (من غير شحن)</span><strong>${fmt(o.total)} ج.م</strong></div>
     <div class="ord-a">${Object.keys(ST).filter(k=>k!==o.status).map(k=>`<button type="button" class="btn ${k==='cancelled'?'danger':'ghost'} sm" data-st="${k}">${ST[k]}</button>`).join('')}
     <a class="btn ghost sm" target="_blank" rel="noopener" href="https://wa.me/${esc(waNum(o.phone))}">واتساب</a></div></li>`;
   }).join('');

@@ -263,3 +263,4 @@ footer.foot .adm:hover,footer.foot .adm:focus-visible,footer.foot .adm:active{ba
 .ok-box{text-align:center}.ok-box h2{color:var(--ok)}
 .c-toast{position:fixed;z-index:90;left:50%;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 140px);transform:translate(-50%,10px);background:var(--slate);border:1px solid var(--line);padding:10px 18px;border-radius:99px;opacity:0;pointer-events:none;transition:.2s}
 .c-toast.on{opacity:1;transform:translate(-50%,0)}
+.o-rem{display:flex;gap:8px;align-items:center;color:var(--muted);min-height:44px}.o-rem input{width:22px;height:22px}
