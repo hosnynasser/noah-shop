@@ -10,11 +10,11 @@ const API_BASE='https://noah-api.hosnynasser843.workers.dev';
    ممكن تغيّرهم من لوحة التحكم (تبويب "بيانات المحل") من غير ما تفتح الكود، وهي اللي بتتغلب على القيم اللي هنا. */
 const SHOP={
   name:'نوح',
-  phone:'01000000000',
-  whatsapp:'201000000000',          // بصيغة دولية من غير + (مصر = 20)
-  address:'اكتب عنوان المحل هنا',
-  hours:'كل يوم من 9 صباحًا لـ 10 مساءً',
-  mapUrl:'https://www.google.com/maps'
+  phone:'01015753384',
+  whatsapp:'201119907829',          // بصيغة دولية من غير + (مصر = 20)
+  address:'الجيزة - الصف - قرية غمازة الكبرى امام المسجد الغربي',
+  hours:'كل يوم من 9 صباحًا لـ 11 مساءً',
+  mapUrl:'https://www.google.com/maps/search/?api=1&query=29.708078%2C31.296089'
 };
 
 const CATS=[
