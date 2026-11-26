@@ -189,7 +189,7 @@ const handler = {
             for (const [id, qty] of merged) {
                 const p = byId.get(id);
                 if (!p) return json({ error: 'منتج في السلة مبقاش موجود. حدّث الصفحة.', code: 'unknown_product', id }, 400);
-                if (priceHidden(p, site0)) return json({ error: 'سعر المنتج ده مش معروض. اسأل عنه على واتساب: ' + p.name, code: 'price_hidden', id }, 400);
+                if (priceHidden(p, site0)) return json({ error: 'المنتج ده للاستفسار بس. اسأل عنه على واتساب: ' + p.name, code: 'price_hidden', id }, 400);
                 if (p.sample) return json({ error: 'المنتج ده تجريبي ومش متاح للطلب: ' + p.name, code: 'sample' }, 400);
                 if (p.stock === false) return json({ error: 'منتج في السلة نفد: ' + p.name, code: 'out_of_stock', id }, 400);
                 lines.push({ id, name: p.name, price: p.price, qty, lineTotal: Math.round(p.price * qty * 100) / 100 });

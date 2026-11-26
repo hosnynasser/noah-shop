@@ -26,7 +26,7 @@
   }
   const message=()=>{
     const ls=lines();
-    return `أهلاً ${SHOP.name}، عايز أسأل عن سعر وتوفر المنتجات دي:\n`+ls.map((l,i)=>`${i+1}. ${l.p.name} × ${l.qty}`).join('\n');
+    return `أهلاً ${SHOP.name}، عايز أسأل عن المنتجات دي:\n`+ls.map((l,i)=>`${i+1}. ${l.p.name} × ${l.qty}`).join('\n');
   };
   function openList(){
     const ls=lines();
