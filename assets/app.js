@@ -327,7 +327,7 @@ function setCatalog(list){
   BRANDS=[...new Set(P.map(p=>p.brand).filter(Boolean))];
   lastSig='';
   const allPH=P.length>0&&P.every(p=>p.ph);
-  const pw=document.getElementById('whyPrice');if(pw)pw.hidden=allPH;
+  
   const pc=$('#pMin').closest('div[class=""],div:not([class])')||$('#pMin').parentElement.parentElement;
   pc.hidden=allPH;
   document.querySelectorAll('#sort option').forEach(o=>{if(['asc','desc','disc'].includes(o.value))o.hidden=o.disabled=allPH});
