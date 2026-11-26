@@ -196,12 +196,13 @@ $('#clearQ').onclick=()=>{input.value='';state.q='';state.dismiss.clear();render
 document.addEventListener('pointerdown',e=>{if(!e.target.closest('#searchBox'))sugg.hidden=true});
 sugg.addEventListener('mousedown',e=>e.preventDefault());
 
+const PRICEY=/أقل من|أكثر من|رخيص|أرخص/;
 const POP=['لمبة ليد','قاطع 32','مفك','شاكوش','كشاف خارجي أقل من 250','سلك نحاس'];
 function renderSugg(){
   const q=input.value.trim();
   if(!panel.hidden){sugg.hidden=true;return}
   if(!q){
-    sugg.innerHTML=`<p class="sg-h">جرّب تدوّر على</p><div class="sg-chips">${POP.map(x=>`<button class="chip" data-q="${x}">${x}</button>`).join('')}</div>`;
+    sugg.innerHTML=`<p class="sg-h">جرّب تدوّر على</p><div class="sg-chips">${POP.filter(x=>!(ALL_PH&&PRICEY.test(x))).map(x=>`<button class="chip" data-q="${x}">${x}</button>`).join('')}</div>`;
     sugg.hidden=false;return;
   }
   const pq=parseQuery(q);
@@ -258,9 +259,9 @@ if(SR){
 }
 
 /* placeholder بيتغير */
-const HINTS=['جرّب: كشاف خارجي أقل من 250','جرّب: مفك اختبار','جرّب: لمبه ليد رخيصه','جرّب: بريزه أو فيشه','جرّب: قاطع 32 متوفر'];
+const HINTS=['جرّب: مفك اختبار','جرّب: كشاف خارجي أقل من 250','جرّب: لمبه ليد رخيصه','جرّب: بريزه أو فيشه','جرّب: قاطع 32 متوفر'];
 let hi=0;input.placeholder=HINTS[0];
-setInterval(()=>{if(document.activeElement!==input&&!input.value){hi=(hi+1)%HINTS.length;input.placeholder=HINTS[hi]}},3200);
+setInterval(()=>{if(document.activeElement!==input&&!input.value){let k=0;do{hi=(hi+1)%HINTS.length;k++}while(ALL_PH&&PRICEY.test(HINTS[hi])&&k<HINTS.length);input.placeholder=HINTS[hi]}},3200);
 
 /* ---- نافذة المنتج ---- */
 const scrim=$('#scrim');let lastFocus=null;
