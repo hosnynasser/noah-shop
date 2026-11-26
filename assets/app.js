@@ -327,6 +327,7 @@ function setCatalog(list){
   BRANDS=[...new Set(P.map(p=>p.brand).filter(Boolean))];
   lastSig='';
   const allPH=P.length>0&&P.every(p=>p.ph);
+  const pw=document.getElementById('whyPrice');if(pw)pw.hidden=allPH;
   const pc=$('#pMin').closest('div[class=""],div:not([class])')||$('#pMin').parentElement.parentElement;
   pc.hidden=allPH;
   document.querySelectorAll('#sort option').forEach(o=>{if(['asc','desc','disc'].includes(o.value))o.hidden=o.disabled=allPH});
@@ -341,7 +342,6 @@ async function getJSON(path,ms=8000){
 async function loadCatalog(){
   let cached=null;
   try{cached=JSON.parse(localStorage.getItem('noah_catalog')||'null')}catch(_){}
-  if(cached&&cached.length)setCatalog(cached);
   getJSON('/api/site').then(d=>{
     if(d&&d.site){['phone','whatsapp','address','hours','mapUrl'].forEach(k=>{if(d.site[k])SHOP[k]=d.site[k]});applyShop()}
   }).catch(()=>{});
@@ -351,6 +351,8 @@ async function loadCatalog(){
     try{localStorage.setItem('noah_catalog',JSON.stringify(list))}catch(_){}
     setCatalog(list);
   }catch(_){
-    if(!cached||!cached.length)setCatalog(SEED_PRODUCTS);
+    /* الـAPI مش متاح: منعرضش أي سعر (ممكن يكون اتخفى)، الزبون يسأل على واتساب */
+    const nop=l=>l.map(p=>({...p,price:0,old:0,ph:true}));
+    setCatalog(nop(cached&&cached.length?cached:SEED_PRODUCTS));
   }
 }
