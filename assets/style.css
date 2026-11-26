@@ -277,3 +277,6 @@ footer.foot .adm:hover,footer.foot .adm:focus-visible,footer.foot .adm:active{ba
 .inq-add{border:1px solid var(--bulb);color:var(--bulb);background:transparent}
 
 .price strong.ask{white-space:nowrap}
+
+.card .off{top:auto;bottom:10px;inset-inline-start:10px}
+.c-stock{position:absolute;top:10px;inset-inline-start:10px;margin:0;z-index:2;background:rgba(10,10,10,.72);padding:3px 10px;border-radius:999px;color:var(--text)}

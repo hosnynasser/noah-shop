@@ -81,7 +81,7 @@ const plural=n=>n===0?'مفيش منتجات':n===1?'منتج واحد':n===2?'�
 let ALL_PH=false;
 const _pq0=parseQuery;parseQuery=q=>{const r=_pq0(q);if(ALL_PH)r.chips=r.chips.filter(c=>!['range','max','min','cheap'].includes(c.k));return r};
 const discount=p=>(!p.ph&&p.old)?Math.round((1-p.price/p.old)*100):0;
-const priceHtml=(p,stockTxt)=>(p.ph?`<strong class="ask">اسأل عن السعر</strong>`:`<strong>${fmt(p.price)}<small>ج.م</small></strong>${p.old?`<s>${fmt(p.old)}</s>`:''}`)+`<span class="stock ${p.stock?'':'no'}">${stockTxt}</span>`;
+const priceHtml=(p,stockTxt)=>(p.ph?`<strong class="ask">اسأل عن السعر</strong>`:`<strong>${fmt(p.price)}<small>ج.م</small></strong>${p.old?`<s>${fmt(p.old)}</s>`:''}`)+(stockTxt?`<span class="stock ${p.stock?'':'no'}">${stockTxt}</span>`:'');
 
 function hl(text,forms,raws){
   const f=fold(text);let out='',last=0,m;
@@ -160,10 +160,10 @@ function render(){
     grid.innerHTML=pageList.map(p=>{
       const d=discount(p);
       return `<article class="card" role="button" tabindex="0" data-id="${p.id}" aria-label="${esc(p.name)}">
-        <div class="tile ${p.images[0]?'has-img':''}">${p.images[0]?`<img src="${esc(mediaUrl(p.images[0]))}" alt="" loading="lazy" decoding="async">`:ic((CAT[p.cat]||CATS[0]).icon)}${d?`<span class="off">خصم ${d}%</span>`:''}</div>
+        <div class="tile ${p.images[0]?'has-img':''}">${p.images[0]?`<img src="${esc(mediaUrl(p.images[0]))}" alt="" loading="lazy" decoding="async">`:ic((CAT[p.cat]||CATS[0]).icon)}${d?`<span class="off">خصم ${d}%</span>`:''}<span class="stock c-stock ${p.stock?'':'no'}">${p.stock?'متوفر':'نفد'}</span></div>
         <div class="info"><h3>${hl(esc(p.name),forms,raws)}</h3>
         <div class="meta"><b>${esc(p.brand)}</b><span>${p.catName}</span></div>
-        <div class="price">${priceHtml(p,p.stock?'متوفر':'نفد')}</div>${p.ph?`<button type="button" class="inq-card" data-inq="${esc(p.pid)}" aria-label="أضف للاستفسار" title="أضف للاستفسار">+</button>`:''}</div></article>`;
+        <div class="price">${priceHtml(p,'')}</div>${p.ph?`<button type="button" class="inq-card" data-inq="${esc(p.pid)}" aria-label="أضف للاستفسار" title="أضف للاستفسار">+</button>`:''}</div></article>`;
     }).join('');
   }
 

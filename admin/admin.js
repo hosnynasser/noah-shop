@@ -51,6 +51,7 @@ $('#logout').onclick=()=>logout();
 async function start(){
   $('#login').hidden=true;$('#app').hidden=false;
   $('#fCat').innerHTML=CATS.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  $('#catFilter').innerHTML='<option value="">الكل</option>'+CATS.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
   await Promise.all([loadProducts(),loadSite(),loadAdmins(),loadOrders(true)]);
 }
 
@@ -71,8 +72,9 @@ async function loadProducts(){
 function catName(id){return (CAT[id]||{name:'أخرى'}).name}
 function renderList(){
   const q=$('#filter').value.trim().toLowerCase();
-  const rows=products.filter(p=>!q||(p.name+' '+p.brand+' '+p.tags+' '+catName(p.cat)).toLowerCase().includes(q));
-  $('#count').textContent=products.length?`${products.length} منتج${q?`، المعروض ${rows.length}`:''}`:'';
+  const cf=$('#catFilter').value;
+  const rows=products.filter(p=>(!cf||p.cat===cf)&&(!q||(p.name+' '+p.brand+' '+p.tags+' '+catName(p.cat)).toLowerCase().includes(q)));
+  $('#count').textContent=products.length?`${products.length} منتج${(q||cf)?`، المعروض ${rows.length}`:''}`:'';
   const samples=products.filter(p=>p.sample).length;
   $('#sampleBanner').hidden=!samples;
   if(samples)$('#delSamples').textContent=`امسح كل المنتجات التجريبية (${samples})`;
@@ -84,6 +86,7 @@ function renderList(){
     <span class="pr">${p.price==null?'<small>بدون سعر</small>':fmt(p.price)+' ج.م'}</span></button></li>`).join(''):`<li class="empty">${products.length?'مفيش نتيجة.':'مفيش منتجات لسه. اضغط "+ منتج جديد".'}</li>`;
 }
 $('#filter').addEventListener('input',renderList);
+$('#catFilter').addEventListener('change',renderList);
 $('#list').addEventListener('click',e=>{const b=e.target.closest('.item');if(b)openForm(products.find(p=>p.id===b.dataset.id))});
 $('#addBtn').onclick=()=>openForm(null);
 
