@@ -54,7 +54,9 @@
         <input id="filter" type="search" placeholder="دوّر في منتجاتك" aria-label="بحث في المنتجات">
         <button class="btn primary" id="addBtn" type="button">+ منتج جديد</button>
       </div>
-      <select id="catFilter" class="catfilter" aria-label="تصفية حسب التصنيف"><option value="">الكل</option></select>
+      <div class="cdd"><select id="catFilter" hidden aria-hidden="true" tabindex="-1"><option value="">الكل</option></select>
+        <button type="button" id="catBtn" class="catfilter" aria-haspopup="listbox" aria-expanded="false" aria-label="تصفية حسب التصنيف"><span id="catLbl">الكل</span><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+        <ul id="catMenu" class="cmenu" role="listbox" hidden></ul></div>
       <p id="count" class="muted small"></p>
       <ul id="list" class="list"></ul>
     </section>

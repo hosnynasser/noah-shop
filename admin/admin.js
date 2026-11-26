@@ -52,6 +52,7 @@ async function start(){
   $('#login').hidden=true;$('#app').hidden=false;
   $('#fCat').innerHTML=CATS.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
   $('#catFilter').innerHTML='<option value="">الكل</option>'+CATS.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  if(typeof buildCatMenu==='function')buildCatMenu();
   await Promise.all([loadProducts(),loadSite(),loadAdmins(),loadOrders(true)]);
 }
 
@@ -87,6 +88,22 @@ function renderList(){
 }
 $('#filter').addEventListener('input',renderList);
 $('#catFilter').addEventListener('change',renderList);
+function buildCatMenu(){
+  const sel=$('#catFilter'),menu=$('#catMenu');
+  menu.innerHTML=[...sel.options].map(o=>`<li role="option" tabindex="-1" data-v="${esc(o.value)}" aria-selected="${o.value===sel.value}">${esc(o.textContent)}</li>`).join('');
+  $('#catLbl').textContent=sel.options[sel.selectedIndex].textContent;
+}
+function setCatMenu(open){
+  $('#catMenu').hidden=!open;$('#catBtn').setAttribute('aria-expanded',open);
+  if(open){const cur=$('#catMenu [aria-selected="true"]');if(cur)cur.scrollIntoView({block:'nearest'})}
+}
+$('#catBtn').addEventListener('click',e=>{e.stopPropagation();buildCatMenu();setCatMenu($('#catMenu').hidden)});
+$('#catMenu').addEventListener('click',e=>{
+  const li=e.target.closest('li[data-v]');if(!li)return;
+  $('#catFilter').value=li.dataset.v;buildCatMenu();setCatMenu(false);renderList();
+});
+document.addEventListener('click',e=>{if(!e.target.closest('.cdd'))setCatMenu(false)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')setCatMenu(false)});
 $('#list').addEventListener('click',e=>{const b=e.target.closest('.item');if(b)openForm(products.find(p=>p.id===b.dataset.id))});
 $('#addBtn').onclick=()=>openForm(null);
 
