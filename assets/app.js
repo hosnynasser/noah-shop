@@ -163,7 +163,7 @@ function render(){
         <div class="tile ${p.images[0]?'has-img':''}">${p.images[0]?`<img src="${esc(mediaUrl(p.images[0]))}" alt="" loading="lazy" decoding="async">`:ic((CAT[p.cat]||CATS[0]).icon)}${d?`<span class="off">خصم ${d}%</span>`:''}</div>
         <div class="info"><h3>${hl(esc(p.name),forms,raws)}</h3>
         <div class="meta"><b>${esc(p.brand)}</b><span>${p.catName}</span></div>
-        <div class="price">${priceHtml(p,p.stock?'متوفر':'نفد')}</div>${p.ph?`<button type="button" class="inq-card" data-inq="${esc(p.pid)}">+ أضف للاستفسار</button>`:''}</div></article>`;
+        <div class="price">${priceHtml(p,p.stock?'متوفر':'نفد')}</div>${p.ph?`<button type="button" class="inq-card" data-inq="${esc(p.pid)}" aria-label="أضف للاستفسار" title="أضف للاستفسار">+</button>`:''}</div></article>`;
     }).join('');
   }
 
