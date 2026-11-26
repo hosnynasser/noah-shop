@@ -106,3 +106,4 @@ input:focus,select:focus,textarea:focus{border-color:var(--bulb)}
 .ord-items li{display:flex;justify-content:space-between;gap:10px}.ord-items em{font-style:normal}
 .ord-t{display:flex;justify-content:space-between;align-items:center}.ord-t strong{font-size:1.15rem}
 .ord-a{display:flex;flex-wrap:wrap;gap:8px}.ord-a .btn{min-height:44px}
+.hint{display:block;color:var(--muted);font-size:.82rem;line-height:1.6;margin-top:-6px}

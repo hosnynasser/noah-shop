@@ -7,6 +7,7 @@ const KEY='noah_admin_token';
 let TOKEN=localStorage.getItem(KEY)||'';
 let ME=null;
 let products=[];
+let SITE_SHOW=true;
 let editing=null;      // المنتج اللي بيتعدل (null = جديد)
 let draftImages=[];    // معرّفات الصور في النافذة
 let newlyUploaded=[];  // صور اترفعت في النافذة دي (تتمسح لو لغيت)
@@ -79,7 +80,7 @@ function renderList(){
     <span class="th">${p.images&&p.images[0]?`<img src="${esc(mediaUrl(p.images[0]))}" alt="" loading="lazy">`:'بدون صورة'}</span>
     <span class="tx"><div class="nm">${esc(p.name)}</div>
     <div class="mt"><span>${esc(catName(p.cat))}</span>${p.brand?`<span>· ${esc(p.brand)}</span>`:''}
-    ${p.stock===false?'<span class="tag no">نفد</span>':''}${p.sample?'<span class="tag sm">تجريبي</span>':''}</div></span>
+    ${p.stock===false?'<span class="tag no">نفد</span>':''}${p.sample?'<span class="tag sm">تجريبي</span>':''}${(p.priceMode==='hide'||(p.priceMode!=='show'&&!SITE_SHOW))?'<span class="tag no">سعر مخفي</span>':''}</div></span>
     <span class="pr">${fmt(p.price)} ج.م</span></button></li>`).join(''):`<li class="empty">${products.length?'مفيش نتيجة.':'مفيش منتجات لسه. اضغط "+ منتج جديد".'}</li>`;
 }
 $('#filter').addEventListener('input',renderList);
@@ -123,6 +124,7 @@ function openForm(p){
   $('#fPrice').value=p?p.price:'';
   $('#fOld').value=p&&p.old?p.old:'';
   $('#fStock').checked=p?p.stock!==false:true;
+  $('#fPriceMode').value=p&&(p.priceMode==='show'||p.priceMode==='hide')?p.priceMode:'';
   $('#fDesc').value=p?p.desc||'':'';
   $('#fTags').value=p?p.tags||'':'';
   $('#pDelete').hidden=!p;$('#pErr').hidden=true;
@@ -189,6 +191,7 @@ $('#pform').addEventListener('submit',async e=>{
     price,old:parseFloat($('#fOld').value)||0,stock:$('#fStock').checked,
     desc:$('#fDesc').value.trim(),tags:$('#fTags').value.trim(),images:[...draftImages]
   };
+  const pm=$('#fPriceMode').value;if(pm==='show'||pm==='hide')item.priceMode=pm;
   if(item.old&&item.old<=item.price)item.old=0;
   busy=true;const b=$('#pSave');b.disabled=true;b.textContent='جاري الحفظ…';
   try{
@@ -219,6 +222,7 @@ const DEFAULTS={phone:'01000000000',whatsapp:'201000000000',address:'اكتب ع
 async function loadSite(){
   let site={};
   try{const r=await fetch(API_BASE+'/api/site',{cache:'no-store'});site=(await r.json()).site||{}}catch(_){}
+  SITE_SHOW=site.showPrices!==false;$('#sShowPrices').checked=SITE_SHOW;renderList();
   const v=k=>site[k]||SHOP[k]||'';
   $('#sPhone').value=v('phone');$('#sWa').value=v('whatsapp');$('#sAddr').value=v('address');$('#sMap').value=v('mapUrl');$('#sHours').value=v('hours');
   checkSiteWarn();
@@ -236,7 +240,7 @@ $('#siteForm').addEventListener('submit',async e=>{
   e.preventDefault();
   const b=e.target.querySelector('button[type=submit]');b.disabled=true;
   try{
-    await api('PUT','/api/admin/site',{site:{phone:$('#sPhone').value,whatsapp:$('#sWa').value,address:$('#sAddr').value,mapUrl:$('#sMap').value,hours:$('#sHours').value}});
+    await api('PUT','/api/admin/site',{site:{phone:$('#sPhone').value,whatsapp:$('#sWa').value,address:$('#sAddr').value,mapUrl:$('#sMap').value,hours:$('#sHours').value,showPrices:$('#sShowPrices').checked}});SITE_SHOW=$('#sShowPrices').checked;renderList();
     toast('اتحفظت بيانات المحل وظهرت في الموقع');
   }catch(ex){if(ex.message!=='unauthorized')toast('ما اتحفظتش: '+ex.message,true)}
   finally{b.disabled=false}

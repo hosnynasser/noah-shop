@@ -78,7 +78,8 @@ const input=$('#q'),grid=$('#grid'),sugg=$('#sugg');
 let BRANDS=[];let LOADING=true;
 const fmt=n=>n.toLocaleString('en-US');
 const plural=n=>n===0?'مفيش منتجات':n===1?'منتج واحد':n===2?'منتجين':n<=10?`${n} منتجات`:`${n} منتج`;
-const discount=p=>p.old?Math.round((1-p.price/p.old)*100):0;
+const discount=p=>(!p.ph&&p.old)?Math.round((1-p.price/p.old)*100):0;
+const priceHtml=(p,stockTxt)=>(p.ph?`<strong class="ask">اسأل عن السعر</strong>`:`<strong>${fmt(p.price)}<small>ج.م</small></strong>${p.old?`<s>${fmt(p.old)}</s>`:''}`)+`<span class="stock ${p.stock?'':'no'}">${stockTxt}</span>`;
 
 function hl(text,forms,raws){
   const f=fold(text);let out='',last=0,m;
@@ -101,14 +102,13 @@ function render(){
   pq.chips.filter(c=>!state.dismiss.has(c.k)).forEach(c=>Object.assign(fx,c.fx));
   const eMin=fx.min??state.min, eMax=fx.max??state.max, eStock=fx.stock||state.stock;
   const S=searchAll(pq.tokens);
-  const common=p=>(!state.brands.size||state.brands.has(p.brand))&&(eMin==null||p.price>=eMin)&&(eMax==null||p.price<=eMax)&&(!eStock||p.stock)&&(!S||S.map.has(p.id));
+  const common=p=>(!state.brands.size||state.brands.has(p.brand))&&(p.ph||((eMin==null||p.price>=eMin)&&(eMax==null||p.price<=eMax)))&&(!eStock||p.stock)&&(!S||S.map.has(p.id));
   const list=P.filter(p=>common(p)&&(state.cat==='all'||p.cat===state.cat));
 
   /* ترتيب */
   let sort=state.sort;if(sort==='rel'&&fx.cheap)sort='asc';
   list.sort((a,b)=>{
-    if(sort==='asc')return a.price-b.price;
-    if(sort==='desc')return b.price-a.price;
+    if(sort==='asc'||sort==='desc'){if(a.ph||b.ph)return (a.ph?1:0)-(b.ph?1:0)||a.id-b.id;return sort==='asc'?a.price-b.price:b.price-a.price}
     if(sort==='disc')return discount(b)-discount(a)||a.id-b.id;
     if(S)return (S.map.get(b.id)-S.map.get(a.id))||(+b.stock-+a.stock)||a.id-b.id;
     return a.id-b.id;
@@ -161,7 +161,7 @@ function render(){
         <div class="tile ${p.images[0]?'has-img':''}">${p.images[0]?`<img src="${esc(mediaUrl(p.images[0]))}" alt="" loading="lazy" decoding="async">`:ic((CAT[p.cat]||CATS[0]).icon)}${d?`<span class="off">خصم ${d}%</span>`:''}</div>
         <div class="info"><h3>${hl(esc(p.name),forms,raws)}</h3>
         <div class="meta"><b>${esc(p.brand)}</b><span>${p.catName}</span></div>
-        <div class="price"><strong>${fmt(p.price)}<small>ج.م</small></strong>${p.old?`<s>${fmt(p.old)}</s>`:''}<span class="stock ${p.stock?'':'no'}">${p.stock?'متوفر':'نفد'}</span></div></div></article>`;
+        <div class="price">${priceHtml(p,p.stock?'متوفر':'نفد')}</div>${p.ph?`<button type="button" class="inq-card" data-inq="${esc(p.pid)}">+ أضف للاستفسار</button>`:''}</div></article>`;
     }).join('');
   }
 
@@ -207,7 +207,7 @@ function renderSugg(){
   if(!S||!S.map.size){sugg.hidden=true;return}
   const forms=new Set(),raws=[];pq.tokens.forEach(t=>{t.forms.forEach(x=>forms.add(x));raws.push(t.raw)});
   const top=[...S.map.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5).map(([id])=>P[id]);
-  sugg.innerHTML=top.map(p=>`<button class="sg-item" data-open="${p.id}">${ic((CAT[p.cat]||CATS[0]).icon)}<div><b>${hl(esc(p.name),forms,raws)}</b><small>${p.catName}</small></div><em>${fmt(p.price)} ج.م</em></button>`).join('');
+  sugg.innerHTML=top.map(p=>`<button class="sg-item" data-open="${p.id}">${ic((CAT[p.cat]||CATS[0]).icon)}<div><b>${hl(esc(p.name),forms,raws)}</b><small>${p.catName}</small></div>${p.ph?'':`<em>${fmt(p.price)} ج.م</em>`}</button>`).join('');
   sugg.hidden=false;
 }
 
@@ -269,9 +269,9 @@ function openProduct(id){
     ${gallery(p,d)}</div>
     <div class="body"><div class="meta"><b>${esc(p.brand)}</b><span>${p.catName}</span></div>
     <h2>${esc(p.name)}</h2>
-    <div class="price"><strong>${fmt(p.price)}<small>ج.م</small></strong>${p.old?`<s>${fmt(p.old)}</s>`:''}<span class="stock ${p.stock?'':'no'}">${p.stock?'متوفر':'نفد حاليًا'}</span></div>
+    <div class="price">${priceHtml(p,p.stock?'متوفر':'نفد حاليًا')}</div>
     <p>${esc(p.desc)}</p>
-    <a class="btn primary" target="_blank" rel="noopener" href="${waLink(`أهلاً ${SHOP.name}، عايز أسأل عن: ${p.name} (${fmt(p.price)} ج.م)`)}">${ic('chat')}${p.stock?'اسأل أو اطلب على واتساب':'اسأل عن موعد التوفر'}</a></div></div>`;
+    <a class="btn primary" target="_blank" rel="noopener" href="${waLink(`أهلاً ${SHOP.name}، عايز أسأل عن: ${p.name}${p.ph?'':` (${fmt(p.price)} ج.م)`}`)}">${ic('chat')}${p.stock?'اسأل أو اطلب على واتساب':'اسأل عن موعد التوفر'}</a></div></div>`;
   scrim.hidden=false;document.body.style.overflow='hidden';
   $('#closeSheet').focus();
 }
@@ -326,6 +326,11 @@ function setCatalog(list){
   indexProducts(list);
   BRANDS=[...new Set(P.map(p=>p.brand).filter(Boolean))];
   lastSig='';
+  const allPH=P.length>0&&P.every(p=>p.ph);
+  const pc=$('#pMin').closest('div[class=""],div:not([class])')||$('#pMin').parentElement.parentElement;
+  pc.hidden=allPH;
+  document.querySelectorAll('#sort option').forEach(o=>{if(['asc','desc','disc'].includes(o.value))o.hidden=o.disabled=allPH});
+  if(allPH&&['asc','desc','disc'].includes(state.sort)){state.sort='rel';$('#sort').value='rel'}
   render();
 }
 async function getJSON(path,ms=8000){

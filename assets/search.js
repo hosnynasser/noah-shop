@@ -55,7 +55,7 @@ let VOCAB=[];
 function indexProducts(list){
   P=list.map((p,i)=>({
     pid:p.id,id:i,name:String(p.name||''),cat:p.cat,brand:String(p.brand||''),
-    price:+p.price||0,old:+p.old||0,stock:p.stock!==false,tags:String(p.tags||''),desc:String(p.desc||''),
+    price:p.ph?0:+p.price||0,old:p.ph?0:+p.old||0,ph:!!p.ph,stock:p.stock!==false,tags:String(p.tags||''),desc:String(p.desc||''),
     images:Array.isArray(p.images)?p.images:[],sample:!!p.sample
   }));
   DISPLAY=new Map();

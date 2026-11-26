@@ -4,7 +4,7 @@
   let cart={};try{cart=JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch(_){cart={}}
   const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(cart))}catch(_){}};
   const byPid=id=>P.find(p=>p.pid===id);
-  const canBuy=p=>!!(p&&p.stock&&!p.sample);
+  const canBuy=p=>!!(p&&p.stock&&!p.sample&&!p.ph);
   const lines=()=>Object.keys(cart).map(id=>({p:byPid(id),id,qty:cart[id]})).filter(l=>l.p);
   const count=()=>lines().reduce((a,l)=>a+l.qty,0);
   const total=()=>lines().reduce((a,l)=>a+l.qty*l.p.price,0);

@@ -60,7 +60,19 @@ function cleanProduct(p, seen) {
         images: (Array.isArray(p.images) ? p.images : []).filter((m) => typeof m === 'string' && MEDIA_ID.test(m)).slice(0, 6),
     };
     if (p.sample === true) out.sample = true;
+    if (p.priceMode === 'show' || p.priceMode === 'hide') out.priceMode = p.priceMode;
     return out;
+}
+
+
+// ---------- إخفاء الأسعار عن الزباين ----------
+// السعر بيتخفي لو المنتج "إخفاء دائمًا"، أو لو "يتبع الإعداد العام" والإعداد العام مقفول. الأسعار المحفوظة ما بتتغيرش وبتظهر في الإدارة.
+const priceHidden = (p, site) => p.priceMode === 'hide' || (p.priceMode !== 'show' && !!site && site.showPrices === false);
+function publicProduct(p, site) {
+    const { priceMode, ...rest } = p;
+    if (!priceHidden(p, site)) return rest;
+    const { price, old, ...noPrice } = rest;
+    return { ...noPrice, ph: true };
 }
 
 // ---------- حسابات المديرين ----------
@@ -130,8 +142,9 @@ const handler = {
 
         // ---------- عام ----------
         if (path === '/api/products' && request.method === 'GET') {
-            const raw = await env.SHOP_KV.get('products');
-            return json({ products: raw ? JSON.parse(raw) : null });
+            const [raw, sraw] = await Promise.all([env.SHOP_KV.get('products'), env.SHOP_KV.get('site')]);
+            const site = sraw ? JSON.parse(sraw) : null;
+            return json({ products: raw ? JSON.parse(raw).map((p) => publicProduct(p, site)) : null });
         }
         if (path === '/api/site' && request.method === 'GET') {
             const raw = await env.SHOP_KV.get('site');
@@ -161,7 +174,8 @@ const handler = {
             if (address.length < 5) return json({ error: 'اكتب العنوان' }, 400);
             const rawItems = Array.isArray(b.items) ? b.items.slice(0, 40) : [];
             if (!rawItems.length) return json({ error: 'السلة فاضية' }, 400);
-            const praw = await env.SHOP_KV.get('products');
+            const [praw, sraw0] = await Promise.all([env.SHOP_KV.get('products'), env.SHOP_KV.get('site')]);
+            const site0 = sraw0 ? JSON.parse(sraw0) : null;
             const catalog = praw ? JSON.parse(praw) : [];
             const byId = new Map(catalog.map((p) => [p.id, p]));
             const merged = new Map();
@@ -174,6 +188,7 @@ const handler = {
             for (const [id, qty] of merged) {
                 const p = byId.get(id);
                 if (!p) return json({ error: 'منتج في السلة مبقاش موجود. حدّث الصفحة.', code: 'unknown_product', id }, 400);
+                if (priceHidden(p, site0)) return json({ error: 'سعر المنتج ده مش معروض. اسأل عنه على واتساب: ' + p.name, code: 'price_hidden', id }, 400);
                 if (p.sample) return json({ error: 'المنتج ده تجريبي ومش متاح للطلب: ' + p.name, code: 'sample' }, 400);
                 if (p.stock === false) return json({ error: 'منتج في السلة نفد: ' + p.name, code: 'out_of_stock', id }, 400);
                 lines.push({ id, name: p.name, price: p.price, qty, lineTotal: Math.round(p.price * qty * 100) / 100 });
@@ -296,12 +311,15 @@ const handler = {
             }
             if (path === '/api/admin/site' && request.method === 'PUT') {
                 const s = body.site || {};
+                let prevSite = null;
+                try { const pr = await env.SHOP_KV.get('site'); prevSite = pr ? JSON.parse(pr) : null; } catch {}
                 const site = {
                     phone: clean(s.phone, 30),
                     whatsapp: clean(s.whatsapp, 20).replace(/\D/g, ''),
                     address: clean(s.address, 200),
                     hours: clean(s.hours, 120),
                     mapUrl: /^https:\/\//.test(s.mapUrl || '') ? clean(s.mapUrl, 500) : '',
+                    showPrices: typeof s.showPrices === 'boolean' ? s.showPrices : (prevSite ? prevSite.showPrices !== false : true),
                 };
                 await env.SHOP_KV.put('site', JSON.stringify(site));
                 return json({ ok: true, site });

@@ -73,6 +73,8 @@
           <input id="sAddr" placeholder="الشارع، الحي، المدينة"></label>
         <label>رابط الخريطة <small>افتح المحل على Google Maps، اضغط مشاركة، وانسخ الرابط</small>
           <input id="sMap" inputmode="url" dir="ltr" placeholder="https://maps.app.goo.gl/..."></label>
+        <label class="check"><input id="sShowPrices" type="checkbox" checked><span>إظهار الأسعار للزبائن في الموقع</span></label>
+        <small class="hint">لو قفلتها، الزبون يشوف «اسأل عن السعر» بدل السعر (إلا المنتجات اللي اخترت لها «إظهار دائمًا»). الأسعار بتفضل عندك في اللوحة. المنتج المخفي سعره ما يتطلبش من السلة، الزبون يسأل عنه على واتساب.</small>
         <label>مواعيد الشغل
           <input id="sHours" placeholder="كل يوم من 9 صباحًا لـ 10 مساءً"></label>
         <button class="btn primary" type="submit">حفظ بيانات المحل</button>
@@ -119,6 +121,8 @@
         <label>السعر قبل الخصم <small>اتركه فاضي لو مفيش</small><input id="fOld" type="number" inputmode="decimal" min="0" step="any" dir="ltr"></label>
       </div>
       <label class="check"><input id="fStock" type="checkbox" checked><span>متوفر</span></label>
+      <label>عرض السعر للزبون <small>«يتبع الإعداد العام» هو الافتراضي. السعر بيفضل محفوظ عندك حتى لو مخفي.</small>
+        <select id="fPriceMode"><option value="">يتبع الإعداد العام</option><option value="show">إظهار السعر دائمًا</option><option value="hide">إخفاء السعر دائمًا</option></select></label>
       <label>وصف قصير<textarea id="fDesc" rows="3" maxlength="600" placeholder="بيظهر لما الزبون يفتح المنتج"></textarea></label>
       <label>كلمات بحث إضافية <small>كلمات الزبون ممكن يدوّر بيها (عامية، إنجليزي...)، بمسافات</small><input id="fTags" maxlength="300" placeholder="ليد موفرة اضاءة"></label>
 
