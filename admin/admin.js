@@ -80,8 +80,8 @@ function renderList(){
     <span class="th">${p.images&&p.images[0]?`<img src="${esc(mediaUrl(p.images[0]))}" alt="" loading="lazy">`:'بدون صورة'}</span>
     <span class="tx"><div class="nm">${esc(p.name)}</div>
     <div class="mt"><span>${esc(catName(p.cat))}</span>${p.brand?`<span>· ${esc(p.brand)}</span>`:''}
-    ${p.stock===false?'<span class="tag no">نفد</span>':''}${p.sample?'<span class="tag sm">تجريبي</span>':''}${(p.priceMode==='hide'||(p.priceMode!=='show'&&!SITE_SHOW))?'<span class="tag no">سعر مخفي</span>':''}</div></span>
-    <span class="pr">${fmt(p.price)} ج.م</span></button></li>`).join(''):`<li class="empty">${products.length?'مفيش نتيجة.':'مفيش منتجات لسه. اضغط "+ منتج جديد".'}</li>`;
+    ${p.stock===false?'<span class="tag no">نفد</span>':''}${p.sample?'<span class="tag sm">تجريبي</span>':''}${(p.price==null||p.priceMode==='hide'||(p.priceMode!=='show'&&!SITE_SHOW))?'<span class="tag no">سعر مخفي</span>':''}</div></span>
+    <span class="pr">${p.price==null?'<small>بدون سعر</small>':fmt(p.price)+' ج.م'}</span></button></li>`).join(''):`<li class="empty">${products.length?'مفيش نتيجة.':'مفيش منتجات لسه. اضغط "+ منتج جديد".'}</li>`;
 }
 $('#filter').addEventListener('input',renderList);
 $('#list').addEventListener('click',e=>{const b=e.target.closest('.item');if(b)openForm(products.find(p=>p.id===b.dataset.id))});
@@ -121,7 +121,7 @@ function openForm(p){
   $('#fName').value=p?p.name:'';
   $('#fCat').value=p&&CAT[p.cat]?p.cat:CATS[0].id;
   $('#fBrand').value=p?p.brand||'':'';
-  $('#fPrice').value=p?p.price:'';
+  $('#fPrice').value=p&&p.price!=null?p.price:'';
   $('#fOld').value=p&&p.old?p.old:'';
   $('#fStock').checked=p?p.stock!==false:true;
   $('#fPriceMode').value=p&&(p.priceMode==='show'||p.priceMode==='hide')?p.priceMode:'';
@@ -182,17 +182,17 @@ $('#fFiles').addEventListener('change',async e=>{
 
 $('#pform').addEventListener('submit',async e=>{
   e.preventDefault();if(busy)return;
-  const price=parseFloat($('#fPrice').value);
+  const price=$('#fPrice').value.trim()===''?null:parseFloat($('#fPrice').value);
   const err=$('#pErr');
-  if(!$('#fName').value.trim()||!(price>=0)){err.textContent='اكتب اسم المنتج والسعر.';err.hidden=false;return}
+  if(!$('#fName').value.trim()||(price!==null&&!(price>=0))){err.textContent='اكتب اسم المنتج (والسعر لو موجود).';err.hidden=false;return}
   const item={
     id:editing?editing.id:'p-'+Math.random().toString(36).slice(2,10),
     name:$('#fName').value.trim(),cat:$('#fCat').value,brand:$('#fBrand').value.trim(),
-    price,old:parseFloat($('#fOld').value)||0,stock:$('#fStock').checked,
+    price,old:price===null?0:(parseFloat($('#fOld').value)||0),stock:$('#fStock').checked,
     desc:$('#fDesc').value.trim(),tags:$('#fTags').value.trim(),images:[...draftImages]
   };
   const pm=$('#fPriceMode').value;if(pm==='show'||pm==='hide')item.priceMode=pm;
-  if(item.old&&item.old<=item.price)item.old=0;
+  if(item.old&&price!==null&&item.old<=item.price)item.old=0;
   busy=true;const b=$('#pSave');b.disabled=true;b.textContent='جاري الحفظ…';
   try{
     const cur=await freshProducts();           /* نقرا آخر نسخة عشان ما نمسحش تعديل جهاز تاني */

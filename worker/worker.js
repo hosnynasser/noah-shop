@@ -43,6 +43,7 @@ function rid(prefix, n = 10) {
     return prefix + [...b].map((x) => a[x % a.length]).join('');
 }
 
+const unsetPrice = (v) => v === null || v === undefined || (typeof v === 'string' && v.trim() === '');
 function cleanProduct(p, seen) {
     let id = clean(p.id, 40);
     if (!/^[A-Za-z0-9_-]{1,40}$/.test(id) || seen.has(id)) id = rid('p-', 8);
@@ -52,8 +53,8 @@ function cleanProduct(p, seen) {
         name: clean(p.name, 120),
         cat: /^[a-z0-9_-]{1,30}$/.test(p.cat) ? p.cat : 'light',
         brand: clean(p.brand, 40),
-        price: num(p.price),
-        old: num(p.old),
+        price: unsetPrice(p.price) ? null : num(p.price),
+        old: unsetPrice(p.price) ? 0 : num(p.old),
         stock: p.stock !== false,
         tags: clean(p.tags, 300),
         desc: clean(p.desc, 600),
@@ -67,7 +68,7 @@ function cleanProduct(p, seen) {
 
 // ---------- إخفاء الأسعار عن الزباين ----------
 // السعر بيتخفي لو المنتج "إخفاء دائمًا"، أو لو "يتبع الإعداد العام" والإعداد العام مقفول. الأسعار المحفوظة ما بتتغيرش وبتظهر في الإدارة.
-const priceHidden = (p, site) => p.priceMode === 'hide' || (p.priceMode !== 'show' && !!site && site.showPrices === false);
+const priceHidden = (p, site) => unsetPrice(p.price) || p.priceMode === 'hide' || (p.priceMode !== 'show' && !!site && site.showPrices === false);
 function publicProduct(p, site) {
     const { priceMode, ...rest } = p;
     if (!priceHidden(p, site)) return rest;
