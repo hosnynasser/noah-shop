@@ -78,6 +78,8 @@ const input=$('#q'),grid=$('#grid'),sugg=$('#sugg');
 let BRANDS=[];let LOADING=true;
 const fmt=n=>n.toLocaleString('en-US');
 const plural=n=>n===0?'مفيش منتجات':n===1?'منتج واحد':n===2?'منتجين':n<=10?`${n} منتجات`:`${n} منتج`;
+let ALL_PH=false;
+const _pq0=parseQuery;parseQuery=q=>{const r=_pq0(q);if(ALL_PH)r.chips=r.chips.filter(c=>!['range','max','min','cheap'].includes(c.k));return r};
 const discount=p=>(!p.ph&&p.old)?Math.round((1-p.price/p.old)*100):0;
 const priceHtml=(p,stockTxt)=>(p.ph?`<strong class="ask">اسأل عن السعر</strong>`:`<strong>${fmt(p.price)}<small>ج.م</small></strong>${p.old?`<s>${fmt(p.old)}</s>`:''}`)+`<span class="stock ${p.stock?'':'no'}">${stockTxt}</span>`;
 
@@ -326,7 +328,7 @@ function setCatalog(list){
   indexProducts(list);
   BRANDS=[...new Set(P.map(p=>p.brand).filter(Boolean))];
   lastSig='';
-  const allPH=P.length>0&&P.every(p=>p.ph);
+  const allPH=P.length>0&&P.every(p=>p.ph);ALL_PH=allPH;
   
   const pc=$('#pMin').closest('div[class=""],div:not([class])')||$('#pMin').parentElement.parentElement;
   pc.hidden=allPH;
