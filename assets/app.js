@@ -81,7 +81,7 @@ const plural=n=>n===0?'مفيش منتجات':n===1?'منتج واحد':n===2?'�
 let ALL_PH=false;
 const _pq0=parseQuery;parseQuery=q=>{const r=_pq0(q);if(ALL_PH)r.chips=r.chips.filter(c=>!['range','max','min','cheap'].includes(c.k));return r};
 const discount=p=>(!p.ph&&p.old)?Math.round((1-p.price/p.old)*100):0;
-const priceHtml=(p,stockTxt)=>(p.ph?`<strong class="ask">للاستفسار على واتساب</strong>`:`<strong>${fmt(p.price)}<small>ج.م</small></strong>${p.old?`<s>${fmt(p.old)}</s>`:''}`)+`<span class="stock ${p.stock?'':'no'}">${stockTxt}</span>`;
+const priceHtml=(p,stockTxt)=>(p.ph?`<strong class="ask">اسأل عن السعر</strong>`:`<strong>${fmt(p.price)}<small>ج.م</small></strong>${p.old?`<s>${fmt(p.old)}</s>`:''}`)+`<span class="stock ${p.stock?'':'no'}">${stockTxt}</span>`;
 
 function hl(text,forms,raws){
   const f=fold(text);let out='',last=0,m;
